@@ -119,7 +119,13 @@ Extraction options are also available on the command-line and they can be combin
 
     $ < myfile.html trafilatura --json --no-tables
 
+Use ``--filename-template`` to control how output filenames are generated based on the URL and content.
 
+.. code-block:: bash
+
+    $ trafilatura -u "https://example.com/path/dirs" --filename-template "{domain}/{path_dirs}/{hash}.{ext}" --markdown -o output/
+
+this will produce a file named ``example.com/path/dirs/uOHdo6wKo4IK0pkL.md`` in the ``output`` directory.
 
 Further steps
 -------------

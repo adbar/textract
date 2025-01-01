@@ -15,21 +15,20 @@ import string
 import sys
 import traceback
 
-from base64 import urlsafe_b64encode
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from datetime import datetime
 from functools import partial
 from os import makedirs, path, stat, walk
 from threading import RLock
-from typing import Any, Generator, Optional, List, Set, Tuple
+from typing import Any, Generator, List, Optional, Set, Tuple
 
 from courlan import UrlStore, extract_domain, get_base_url  # validate_url
 
 from trafilatura import spider
+from trafilatura.filename import FilenameTemplate, generate_hash_filename
 
 from .baseline import html2txt
 from .core import extract
-from .deduplication import generate_bow_hash
 from .downloads import (
     Response,
     add_to_compressed_dict,
@@ -63,13 +62,12 @@ CHAR_CLASS = string.ascii_letters + string.digits
 STRIP_DIR = re.compile(r"[^/]+$")
 STRIP_EXTENSION = re.compile(r"\.[a-z]{2,5}$")
 
-CLEAN_XML = re.compile(r"<[^<]+?>")
-
 INPUT_URLS_ARGS = ["URL", "crawl", "explore", "probe", "feed", "sitemap"]
 
 EXTENSION_MAPPING = {
     "csv": ".csv",
     "json": ".json",
+    "markdown": ".md",
     "xml": ".xml",
     "xmltei": ".xml",
 }
@@ -154,12 +152,6 @@ def get_writable_path(destdir: str, extension: str) -> Tuple[str, str]:
     return output_path, filename
 
 
-def generate_hash_filename(content: str) -> str:
-    """Create a filename-safe string by hashing the given content
-    after deleting potential XML tags."""
-    return urlsafe_b64encode(generate_bow_hash(CLEAN_XML.sub("", content), 12)).decode()
-
-
 def determine_output_path(
     args: Any,
     orig_filename: str,
@@ -171,19 +163,46 @@ def determine_output_path(
     # determine extension, TXT by default
     extension = EXTENSION_MAPPING.get(args.output_format, ".txt")
 
-    if args.keep_dirs:
-        # strip directory
-        original_dir = STRIP_DIR.sub("", orig_filename)
-        destination_dir = path.join(args.output_dir, original_dir)
-        # strip extension
-        filename = STRIP_EXTENSION.sub("", orig_filename)
-    else:
-        destination_dir = determine_counter_dir(args.output_dir, counter)
-        # use cryptographic hash on file contents to define name
-        filename = new_filename or generate_hash_filename(content)
+    if hasattr(args, "filename_template") and args.filename_template:
+        # Initialize template with configuration
+        template = FilenameTemplate(
+            template=args.filename_template,
+            max_length=args.max_length,
+            output_dir=args.output_dir,
+            lang=args.target_language,
+            ext=extension,
+        )
 
-    output_path = path.join(destination_dir, filename + extension)
-    return output_path, destination_dir
+        try:
+            output_path, destination_dir = template.generate(
+                content=content,
+                url=args.URL,
+                filename=new_filename or orig_filename
+            )
+            return output_path, destination_dir
+
+        except ValueError as e:
+            # Log the error and fall back to hash-based filename
+            LOGGER.warning("Template generation failed: %s. Falling back to hash-based name.", str(e))
+            filename = generate_hash_filename(content)
+            full_path = path.join(args.output_dir, filename + extension)
+            return args.output_dir, full_path
+
+    else:
+        # Original behavior for backward compatibility
+        if args.keep_dirs:
+            # strip directory
+            original_dir = STRIP_DIR.sub("", orig_filename)
+            destination_dir = path.join(args.output_dir, original_dir)
+            # strip extension
+            filename = STRIP_EXTENSION.sub("", orig_filename)
+        else:
+            destination_dir = determine_counter_dir(args.output_dir, counter)
+            # use cryptographic hash on file contents to define name
+            filename = new_filename or generate_hash_filename(content)
+
+        output_path = path.join(destination_dir, filename + extension)
+        return output_path, destination_dir
 
 
 def archive_html(htmlstring: str, args: Any, counter: int = -1) -> str:

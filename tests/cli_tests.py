@@ -21,6 +21,7 @@ from courlan import UrlStore
 
 from trafilatura import cli, cli_utils, spider, settings
 from trafilatura.downloads import add_to_compressed_dict, fetch_url
+from trafilatura.filename import generate_hash_filename
 from trafilatura.utils import LANGID_FLAG
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -586,6 +587,67 @@ def test_probing():
     else:
         assert f.getvalue().strip() == url
 
+def test_filename_template_cli_integration():
+    """Test CLI integration with FilenameTemplate."""
+    # Test hierarchical structure with no extension
+    testargs = ["", "--filename-template", "{domain}/{path_dirs}", "--output-dir", "/tmp/test", "-u", "https://example.com/blog/post1"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    output_path, destination_dir = cli_utils.determine_output_path(args=args, orig_filename="", content="Test content 1")
+    assert destination_dir == "/tmp/test/example.com/blog"
+    assert output_path == "/tmp/test/example.com/blog/post1"
+
+    # Test with markdown extension
+    testargs = ["", "--filename-template", "{domain}/{path_dirs}.{ext}", "--output-dir", "/tmp/test", "--markdown", "-u", "https://example.com/blog/post1"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    output_path2, destination_dir2 = cli_utils.determine_output_path(args=args, orig_filename="", content="Test content 1")
+    assert destination_dir2 == "/tmp/test/example.com/blog"
+    assert output_path2 == "/tmp/test/example.com/blog/post1.md"
+
+    # Test flattened structure
+    testargs = ["", "--filename-template", "{domain}/{path}", "--output-dir", "/tmp/test", "-u", "https://example.com/articles/tech/news"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    output_path3, destination_dir3 = cli_utils.determine_output_path(args=args, orig_filename="", content="Test content 2")
+    assert destination_dir3 == "/tmp/test/example.com"
+    assert output_path3 == "/tmp/test/example.com/articles_tech_news"
+
+    # Test with parameters
+    testargs = ["", "--filename-template", "{domain}/{path_dirs}/{hash}-{params}", "--output-dir", "/tmp/test", "-u", "https://example.com/articles/tech?id=123&cat=news"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    output_path4, destination_dir4 = cli_utils.determine_output_path(args=args, orig_filename="", content="Test content 3")
+    assert destination_dir4 == "/tmp/test/example.com/articles/tech"
+    assert output_path4 == f"/tmp/test/example.com/articles/tech/{generate_hash_filename('Test content 3')}-cat-news_id-123"
+
+@pytest.mark.usefixtures("caplog")
+def test_filename_template_cli_errors(caplog):
+    """Test error handling in CLI filename template integration."""
+    # Test URL too long
+    testargs = ["", "--filename-template", "{domain}/{path_dirs}", "--output-dir", "/tmp/test", "-u", "https://example.com/" + "a" * 100, "--max-length", "100"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    output_path, destination_dir = cli_utils.determine_output_path(args=args, orig_filename="", content="test content")
+    assert "_ttt_" in output_path
+    assert destination_dir == "/tmp/test/example.com"
+    assert generate_hash_filename("test content") in output_path
+
+    # Test no URL
+    testargs = ["", "--filename-template", "{domain}/{path}", "--output-dir", "/tmp/test"]
+    with patch.object(sys, "argv", testargs):
+        args = cli.parse_args(testargs)
+
+    caplog.set_level(logging.WARNING)
+    output_path2, destination_dir2 = cli_utils.determine_output_path(args=args, orig_filename="", content="test content")
+    assert "Template generation failed: URL is required for template variables" in caplog.text
+    assert output_path2 == "/tmp/test"
+    assert generate_hash_filename("test content") in destination_dir2
 
 if __name__ == "__main__":
     test_parser()
@@ -599,3 +661,5 @@ if __name__ == "__main__":
     test_crawling()
     test_download()
     test_probing()
+    test_filename_template_cli_integration()
+    test_filename_template_cli_errors()

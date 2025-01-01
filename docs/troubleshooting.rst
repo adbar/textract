@@ -101,3 +101,13 @@ Download first and extract later
 Since the they have distinct characteristics it can be useful to separate the infrastructure needed for download from the extraction. Using a custom IP or network infrastructure can also prevent your usual IP from getting banned.
 
 For an approach using files from the Common Crawl and Trafilatura, see the external tool `datatrove/process_common_crawl_dump.py <https://github.com/huggingface/datatrove/blob/main/examples/process_common_crawl_dump.py>`_.
+
+
+Invalid template variables and filenames
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you see an error about invalid template variables, check that your ``--filename-template`` string only uses supported values like ``{domain}``, ``{hash}``, etc.
+Refer to the filename.py source for a complete list.
+
+An error about unsafe characters in the filename template means that characters like ``<>``, ``:``, ``"`` were used outside of ``{variable}`` sections.
+Make sure to only use alphanumeric characters, underscores, dashes and forward slashes in static parts of the template.

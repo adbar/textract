@@ -52,6 +52,17 @@ Using a custom file on the command-line
 With the ``--config-file`` option, followed by the file name or path. All the required variables have to be present in the custom file.
 
 
+Filename Generation
+^^^^^^^^^^^^^^^^^^^^^
+Two new options allow customizing how output filenames are generated:
+
+--filename-template: Specify a template string for generating filenames, using variables like {domain}, {path}, {hash}, {ext}, etc. Example: --filename-template "{domain}/{hash}.{ext}"
+--max-length: Set the maximum total path length, including directory components. The default is 250 characters. Example: --max-length 200
+
+The filename template can include directory separators to preserve parts of the original URL's path structure. Unsafe characters are sanitized automatically. If the total path would exceed max-length, it is intelligently truncated while preserving key components.
+Invalid variables or unsafe characters will raise an error.
+
+
 Adapting settings in Python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

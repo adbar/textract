@@ -66,6 +66,11 @@ the University of Munich.
    - JSON
    - HTML, XML and [XML-TEI](https://tei-c.org/)
 
+- Flexible output file naming:
+   - Template-based filename generation with variables like {domain}, {path}, {hash}
+   - Path length control and automatic truncation
+   - Safe character handling and URL component parsing
+
 - Optional add-ons:
    - Language detection on extracted content
    - Speed optimizations
@@ -73,7 +78,6 @@ the University of Munich.
 - Actively maintained with support from the open-source community:
    - Regular updates, feature additions, and optimizations
    - Comprehensive documentation
-
 
 ### Evaluation and alternatives
 

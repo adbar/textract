@@ -92,6 +92,33 @@ Output as TXT without metadata is the default, another format can be selected in
 *HTML output is available from version 1.11, Markdown from version 1.9 onwards.*
 
 
+Filename Customization
+~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``--filename-template`` to control how output filenames are generated based on the URL and content. Supported variables:
+
+- {domain}: Website domain
+- {path}: URL path segments, joined by underscores
+- {path_dirs}: URL path segments, joined by directory separators
+- {params}: URL query parameters
+- {hash}: Hash of extracted content
+- {ext}: File extension
+- {lang}: Identified language
+
+Example: ``--filename-template "{domain}/{hash}.{ext}"``
+
+Use ``--max-length`` to set the maximum total path length, including any directories. It defaults to 250 characters.
+
+If the generated path would exceed this limit, it is intelligently truncated:
+1. Individual directory and file components are preserved as long as possible.
+2. The file component is reduced to a minimum of {hash}.{ext}.
+3. The --output-dir is omitted from length calculations.
+
+Example: ``--max-length 200``
+
+Invalid template variables or unsafe path characters will raise an error.
+
+
 Optimizing for precision and recall
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -166,7 +193,7 @@ Two major command line arguments are necessary here:
 
 .. hint::
     Backup of HTML sources can be useful for archival and further processing:
-    
+
     ``$ trafilatura --input-file links.txt --output-dir converted/ --backup-dir html-sources/ --xml``
 
 
@@ -288,6 +315,7 @@ For all usage instructions see ``trafilatura -h``:
     trafilatura [-h] [-i INPUTFILE | --input-dir INPUTDIR | -u URL]
                    [--parallel PARALLEL] [-b BLACKLIST] [--list]
                    [-o OUTPUTDIR] [--backup-dir BACKUP_DIR] [--keep-dirs]
+                   [--filename-template FILENAME_TEMPLATE] [--max-length MAX_LENGTH]
                    [--feed [FEED] | --sitemap [SITEMAP] | --crawl [CRAWL] |
                    --explore [EXPLORE] | --probe [PROBE]] [--archived]
                    [--url-filter URL_FILTER [URL_FILTER ...]] [-f]
@@ -295,7 +323,7 @@ For all usage instructions see ``trafilatura -h``:
                    [--no-tables] [--only-with-metadata] [--with-metadata]
                    [--target-language TARGET_LANGUAGE] [--deduplicate]
                    [--config-file CONFIG_FILE] [--precision] [--recall]
-                   [--output-format {csv,json,html,markdown,txt,xml,xmltei} | 
+                   [--output-format {csv,json,html,markdown,txt,xml,xmltei} |
                    --csv | --html | --json | --markdown | --xml | --xmltei]
                    [--validate-tei] [-v] [--version]
 
@@ -331,6 +359,11 @@ Output:
                         preserve a copy of downloaded files in a backup
                         directory
   --keep-dirs           keep input directory structure and file names
+  --filename-template FILENAME_TEMPLATE
+                        template for generating filenames (e.g.
+                        {domain}/{path}-{hash}.{ext})
+  --max-length MAX_LENGTH
+                        maximum length for generated file paths
 
 Navigation:
   Link discovery and web crawling
@@ -381,4 +414,3 @@ Format:
   --xml                 shorthand for XML output
   --xmltei              shorthand for XML TEI output
   --validate-tei        validate XML TEI output
-

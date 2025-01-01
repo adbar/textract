@@ -65,6 +65,13 @@ def add_args(parser: Any) -> Any:
     group2.add_argument('--keep-dirs',
                         help="keep input directory structure and file names",
                         action="store_true")
+    group2.add_argument("--filename-template",
+                        help="template for generating filenames (e.g. {domain}/{path}-{hash}.{ext})",
+                        type=str)
+    group2.add_argument("--max-length",
+                        help="maximum length for generated file paths",
+                        type=int,
+                        default=250)
 
     group3_ex.add_argument("--feed",
                         help="look for feeds and/or pass a feed URL as input",
