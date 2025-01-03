@@ -91,9 +91,10 @@ def determine_returnstring(document: Document, options: Extractor) -> str:
             header += "---\n"
         else:
             header = ""
-        returnstring = f"{header}{xmltotxt(document.body, options.formatting)}"
+        returnstring = f"{header}{xmltotxt(document.body, options.formatting, options.preserve_space)}"
         if document.commentsbody is not None:
-            returnstring = f"{returnstring}\n{xmltotxt(document.commentsbody, options.formatting)}".strip()
+            returnstring = \
+                f"{returnstring}\n{xmltotxt(document.commentsbody, options.formatting, options.preserve_space)}".strip()
     # normalize Unicode format (defaults to NFC)
     return normalize_unicode(returnstring)
 
@@ -140,6 +141,7 @@ def bare_extraction(
     include_tables: bool = True,
     include_images: bool = False,
     include_formatting: bool = False,
+    preserve_space: bool = False,
     include_links: bool = False,
     deduplicate: bool = False,
     date_extraction_params: Optional[Dict[str, Any]] = None,
@@ -171,6 +173,7 @@ def bare_extraction(
         include_images: Take images into account (experimental).
         include_formatting: Keep structural elements related to formatting
             (present in XML format, converted to markdown otherwise).
+        preserve_space: Preserve space when formatting text.
         include_links: Keep links along with their targets (experimental).
         deduplicate: Remove duplicate segments and documents.
         date_extraction_params: Provide extraction parameters to htmldate as dict().
@@ -205,6 +208,7 @@ def bare_extraction(
             recall=favor_recall,
             comments=include_comments,
             formatting=include_formatting,
+            preserve_space=preserve_space,
             links=include_links,
             images=include_images,
             tables=include_tables,
@@ -361,6 +365,7 @@ def extract(
     include_tables: bool = True,
     include_images: bool = False,
     include_formatting: bool = False,
+    preserve_space: bool = False,
     include_links: bool = False,
     deduplicate: bool = False,
     date_extraction_params: Optional[Dict[str, Any]] = None,
@@ -394,6 +399,7 @@ def extract(
         include_images: Take images into account (experimental).
         include_formatting: Keep structural elements related to formatting
             (only valuable if output_format is set to XML).
+        preserve_space: Preserve space when formatting text.
         include_links: Keep links along with their targets (experimental).
         deduplicate: Remove duplicate segments and documents.
         date_extraction_params: Provide extraction parameters to htmldate as dict().
@@ -427,6 +433,7 @@ def extract(
         include_tables=include_tables,
         include_images=include_images,
         include_formatting=include_formatting,
+        preserve_space=preserve_space,
         include_links=include_links,
         deduplicate=deduplicate,
         date_extraction_params=date_extraction_params,
@@ -456,6 +463,7 @@ def extract_with_metadata(
     include_tables: bool = True,
     include_images: bool = False,
     include_formatting: bool = False,
+    preserve_space: bool = False,
     include_links: bool = False,
     deduplicate: bool = False,
     date_extraction_params: Optional[Dict[str, Any]] = None,
@@ -487,6 +495,7 @@ def extract_with_metadata(
         include_images: Take images into account (experimental).
         include_formatting: Keep structural elements related to formatting
             (only valuable if output_format is set to XML).
+        preserve_space: Preserve space when formatting text.
         include_links: Keep links along with their targets (experimental).
         deduplicate: Remove duplicate segments and documents.
         date_extraction_params: Provide extraction parameters to htmldate as dict().
@@ -515,6 +524,7 @@ def extract_with_metadata(
         include_tables=include_tables,
         include_images=include_images,
         include_formatting=include_formatting,
+        preserve_space=preserve_space,
         include_links=include_links,
         deduplicate=deduplicate,
         date_extraction_params=date_extraction_params,
@@ -564,6 +574,7 @@ def _internal_extraction(
         include_tables: bool = True,
         include_images: bool = False,
         include_formatting: bool = False,
+        preserve_space: bool = False,
         include_links: bool = False,
         deduplicate: bool = False,
         date_extraction_params: Optional[Dict[str, Any]] = None,
@@ -590,6 +601,7 @@ def _internal_extraction(
             recall=favor_recall,
             comments=include_comments,
             formatting=include_formatting,
+            preserve_space=preserve_space,
             links=include_links,
             images=include_images,
             tables=include_tables,

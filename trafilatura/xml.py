@@ -249,6 +249,36 @@ def validate_tei(xmldoc: _Element) -> bool:
 
     return result
 
+def is_element_in_item(element: _Element) -> bool:
+    """Check whether an element is a list item or within a list item"""
+    return element.tag == 'item' or bool(element.xpath('ancestor::item'))
+
+
+def is_first_element_in_item(element: _Element) -> bool:
+    """Check whether an element is the first element in list item"""
+    if element.tag == 'item' and element.text:
+        return True
+    for sub_elem in element.xpath('ancestor::item'):
+        if not sub_elem.text:
+            return True
+    return False
+
+
+def is_last_element_in_item(element: _Element) -> bool:
+    """Check whether an element is the last element in list item"""
+    if not is_element_in_item(element):
+        return False
+
+    # pure text only in list item
+    if element.tag == 'item':
+        return len(element.getchildren()) == 0
+    # element within list item
+    next_element = element.getnext()
+    if next_element is None:
+        return True
+    else:
+        return next_element.tag == 'item'
+
 
 def replace_element_text(element: _Element, include_formatting: bool) -> str:
     "Determine element text based on just the text of the element. One must deal with the tail separately."
@@ -291,8 +321,9 @@ def replace_element_text(element: _Element, include_formatting: bool) -> str:
         if elem_text:
             elem_text = f"{elem_text} "
     # lists
-    elif element.tag == "item" and elem_text:
-        elem_text = f"- {elem_text}\n"
+    if is_first_element_in_item(element) and not is_in_table_cell(element):
+        elem_text = f"- {elem_text} "
+
     return elem_text
 
 
@@ -348,7 +379,7 @@ def process_element(element: _Element, returnlist: List[str], include_formatting
     # Process text
 
     # Common elements (Now processes end-tag logic correctly)
-    if element.tag in NEWLINE_ELEMS and not element.xpath("ancestor::cell"):
+    if element.tag in NEWLINE_ELEMS and not element.xpath("ancestor::cell") and not is_element_in_item(element):
         # spacing hack
         returnlist.append("\n\u2424\n" if include_formatting and element.tag != 'row' else "\n")
     elif element.tag == "cell":
@@ -357,11 +388,16 @@ def process_element(element: _Element, returnlist: List[str], include_formatting
         returnlist.append(" ")
 
     # this is text that comes after the closing tag, so it should be after any NEWLINE_ELEMS
+    # unless it's within a list item or a table
     if element.tail and not is_in_table_cell(element):
-        returnlist.append(element.tail)
+        returnlist.append(element.tail.strip() if is_element_in_item(element) else element.tail)
+
+    # deal with list items alone
+    if is_last_element_in_item(element) and not is_in_table_cell(element):
+        returnlist.append('\n')
 
 
-def xmltotxt(xmloutput: Optional[_Element], include_formatting: bool) -> str:
+def xmltotxt(xmloutput: Optional[_Element], include_formatting: bool, preserve_space: bool = False) -> str:
     "Convert to plain text format and optionally preserve formatting as markdown."
     if xmloutput is None:
         return ""
@@ -370,7 +406,7 @@ def xmltotxt(xmloutput: Optional[_Element], include_formatting: bool) -> str:
 
     process_element(xmloutput, returnlist, include_formatting)
 
-    return unescape(sanitize("".join(returnlist)) or "")
+    return unescape(sanitize("".join(returnlist), preserve_space) or "")
 
 
 def xmltocsv(document: Document, include_formatting: bool, *, delim: str = "\t", null: str = "null") -> str:

@@ -486,7 +486,7 @@ def test_replace_element_text():
     elem = Element("item")
     elem.text = "Test text"
     elem.tag = "item"
-    assert replace_element_text(elem, True) == "- Test text\n"
+    assert replace_element_text(elem, True) == "- Test text "
 
     elem = Element("ref")
     elem.text = "Link"
