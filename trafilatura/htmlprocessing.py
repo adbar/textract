@@ -44,6 +44,8 @@ HTML_TAG_MAPPING = {v: k for k, v in REND_TAG_MAPPING.items()}
 
 PRESERVE_IMG_CLEANING = {"figure", "picture", "source"}
 
+CODE_INDICATORS = ["{", "(\"", "('", "\n    "]
+
 
 def tree_cleaning(tree: HtmlElement, options: Extractor) -> HtmlElement:
     "Prune the tree by discarding unwanted elements."
@@ -315,6 +317,8 @@ def convert_quotes(elem: _Element) -> None:
             code_flag = True
             for subelem in code_elems:
                 subelem.attrib.clear()
+        if elem.text and any([code_indicator in elem.text for code_indicator in CODE_INDICATORS]):
+            code_flag = True
     elem.tag = "code" if code_flag else "quote"
 
 

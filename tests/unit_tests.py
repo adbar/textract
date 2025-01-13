@@ -354,14 +354,26 @@ def test_formatting():
 Here is a code sample:
 
 `import trafilatura`"""
-    my_document = html.fromstring('<html><body><article><h3>Title</h3><p>Here is a code sample:</p><code>import trafilatura\ntrafilatura.extract("")</code></p></article></body></html>')
+    my_document = html.fromstring('<html><body><article><h3>Title</h3><p>Here is a code sample:</p><code><span>import</span> <span>something</span><br/>something.run("somewhere")</code><p>Sometimes code is wrapped using <code>pre</code> and <code>code</code>:</p><pre><code>import trafilatura\ntrafilatura.extract("")</code></pre><p>Less often code is wrapped using just <code>pre</code>:</p><pre>\n    trafilatura.extract("")</pre></article></body></html>')
     my_result = extract(my_document, output_format='txt', include_formatting=True, config=ZERO_CONFIG)
+    print(my_result)
     assert my_result == """### Title
 
 Here is a code sample:
 
 ```
+import something
+something.run("somewhere")
+```
+Sometimes code is wrapped using `pre` and `code`:
+
+```
 import trafilatura
+trafilatura.extract("")
+```
+Less often code is wrapped using just `pre`:
+
+```
 trafilatura.extract("")
 ```"""
 
